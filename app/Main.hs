@@ -10,9 +10,9 @@ import Network.HTTP.Types.Header (hContentType)
 import Data.Aeson
 import GHC.Generics
 
-import Database.SQLite.Simple (open, close, query, Only(..), Connection)
+import Database.SQLite.Simple (open, close, Connection)
 
-import Model (UserLog)
+import Model (UserLog, UserName)
 import Database
 
 data Hello = Hello { hello :: String } deriving (Generic, ToJSON)
@@ -41,10 +41,9 @@ notFoundRoute = responseLBS
 -- https://singpolyma.net/2013/09/making-a-website-with-haskell/
 -- https://stackoverflow.com/questions/29785737/avoiding-errors-caused-by-io-when-talking-to-a-database-inside-of-a-wai-handler
 
-myRoute :: Connection -> IO Response
-myRoute conn = do
-  let username = "cjwebb"
-  [userlogs] <- Database.getUserLogs conn username
+userLogsRoute :: Connection -> UserName -> IO Response
+userLogsRoute conn username = do
+  userlogs <- Database.getUserLogs conn username
   return (responseLBS status200 [(hContentType, "application/json")] (encode userlogs))
 
 -- todo: remove the do block
@@ -52,6 +51,6 @@ app :: Connection -> Application
 app conn request respond = do
   res <- case rawPathInfo request of
     "/"         -> return $ helloRoute request
-    "/u/cjwebb" -> myRoute conn
+    "/u/cjwebb" -> userLogsRoute conn "cjwebb"
     _           -> return $ notFoundRoute
   respond res

@@ -3,7 +3,7 @@
 module Database (getUserLogs, getLog) where
 
 import Model (UserName, UserLog, LogData, LogName)
-import Database.SQLite.Simple (open, close, query, Only(..), Connection)
+import Database.SQLite.Simple (query, Only(..), Connection)
 
 getUserLogs :: Connection -> UserName -> IO [UserLog]
 getUserLogs conn username =
