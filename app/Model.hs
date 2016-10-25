@@ -1,23 +1,30 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
-module Model () where
+module Model ( UserLog, LogData, UserName, LogName, Id ) where
 
 import Data.Aeson
 import GHC.Generics
+import Database.SQLite.Simple.FromRow (FromRow(..), field)
 
-newtype LogName = LogName String deriving (Generic, ToJSON)
-newtype UserName = UserName String deriving (Generic, ToJSON)
+type UserName = String
+type LogName = String
+type Id = String
+
+data UserLog = UserLog {
+    id :: Id
+  , username :: UserName
+  , logname :: LogName
+} deriving (Generic, ToJSON)
+
+instance FromRow UserLog where
+  fromRow = UserLog <$> field <*> field <*> field
 
 data LogData = LogData {
-    t :: String
-  , d :: String
+    id :: Id
+  , t :: String -- todo: make timestamp
+  , d :: String -- todo: make some kind of ADT
 } deriving (Generic, ToJSON)
 
-data UserLogs = UserLogs {
-  logs :: [LogName]
-} deriving (Generic, ToJSON)
-
-data Log = Log {
-    name :: LogName
-  , logData :: [LogData]
-} deriving (Generic, ToJSON)
+instance FromRow LogData where
+  fromRow = LogData <$> field <*> field <*> field

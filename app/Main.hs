@@ -11,7 +11,9 @@ import Data.Aeson
 import GHC.Generics
 
 import Database.SQLite.Simple (open, close, query, Only(..), Connection)
-import Database.SQLite.Simple.FromRow (FromRow(..), field)
+
+import Model (UserLog)
+import Database
 
 data Hello = Hello { hello :: String } deriving (Generic, ToJSON)
 
@@ -39,19 +41,10 @@ notFoundRoute = responseLBS
 -- https://singpolyma.net/2013/09/making-a-website-with-haskell/
 -- https://stackoverflow.com/questions/29785737/avoiding-errors-caused-by-io-when-talking-to-a-database-inside-of-a-wai-handler
 
-data UserLog = UserLog {
-  id :: String,
-  username :: String,
-  logname :: String
-} deriving (ToJSON, Generic)
-
-instance FromRow UserLog where
-  fromRow = UserLog <$> field <*> field <*> field
-
 myRoute :: Connection -> IO Response
 myRoute conn = do
-  let username = "cjwebb" :: String
-  [userlogs] <- query conn "SELECT * FROM userlogs WHERE username = ?" (Only username) :: IO [UserLog]
+  let username = "cjwebb"
+  [userlogs] <- Database.getUserLogs conn username
   return (responseLBS status200 [(hContentType, "application/json")] (encode userlogs))
 
 -- todo: remove the do block
