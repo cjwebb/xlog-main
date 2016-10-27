@@ -12,7 +12,7 @@ import GHC.Generics
 
 import Database.SQLite.Simple (open, close, Connection)
 
-import Model (UserLog, UserName)
+import Model (UserLog, UserName, LogName)
 import Database
 
 data Hello = Hello { hello :: String } deriving (Generic, ToJSON)
@@ -41,16 +41,25 @@ notFoundRoute = responseLBS
 -- https://singpolyma.net/2013/09/making-a-website-with-haskell/
 -- https://stackoverflow.com/questions/29785737/avoiding-errors-caused-by-io-when-talking-to-a-database-inside-of-a-wai-handler
 
+-- todo: refactor 200 OK Json to method,
+--       handle bad database access
+--       handle non-existent user/logs
 userLogsRoute :: Connection -> UserName -> IO Response
 userLogsRoute conn username = do
   userlogs <- Database.getUserLogs conn username
   return (responseLBS status200 [(hContentType, "application/json")] (encode userlogs))
 
+logDataRoute :: Connection -> UserName -> LogName -> IO Response
+logDataRoute conn username logname = do
+  logData <- Database.getLogData conn username logname
+  return (responseLBS status200 [(hContentType, "application/json")] (encode logData))
+
 -- todo: remove the do block
 app :: Connection -> Application
 app conn request respond = do
   res <- case rawPathInfo request of
-    "/"         -> return $ helloRoute request
-    "/u/cjwebb" -> userLogsRoute conn "cjwebb"
+    "/"         -> return $ helloRoute request -- todo, serve elm code
+    "/api/users/cjwebb" -> userLogsRoute conn "cjwebb"
+    "/api/users/cjwebb/logs/weight" -> logDataRoute conn "cjwebb" "weight"
     _           -> return $ notFoundRoute
   respond res
