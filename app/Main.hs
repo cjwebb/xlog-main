@@ -3,34 +3,32 @@
 
 module Main where
 
-import Network.Wai (responseLBS, Application, Request, Response, rawPathInfo)
+import Network.Wai (responseLBS, Application, Request, Response, rawPathInfo, responseFile)
 import Network.Wai.Handler.Warp (run)
+import Network.Wai.Middleware.Static (staticPolicy, only)
 import Network.HTTP.Types (status200, status404)
 import Network.HTTP.Types.Header (hContentType)
-import Data.Aeson
-import GHC.Generics
-
+import Data.Aeson (encode)
 import Database.SQLite.Simple (open, close, Connection)
-
 import Model (UserLog, UserName, LogName)
 import Database
-
-data Hello = Hello { hello :: String } deriving (Generic, ToJSON)
 
 main :: IO ()
 main = do
   let port = 3000
+  let middleware = staticPolicy (only [("static/index.html", "./static/index.html")])
   putStrLn $ "Listening on port " ++ show port
   conn <- open "db.sqlite"
-  run port (app conn)
+  run port $ middleware $ (app conn)
   close conn
 
-helloRoute :: Request -> Response
-helloRoute req =
-  responseLBS
+rootRoute :: Request -> Response
+rootRoute req =
+  responseFile
   status200
-  [(hContentType, "application/json")]
-  . encode $ Hello "World"
+  [(hContentType, "text/html")]
+  "static/index.html"
+  Nothing
 
 notFoundRoute :: Response
 notFoundRoute = responseLBS
@@ -58,7 +56,7 @@ logDataRoute conn username logname = do
 app :: Connection -> Application
 app conn request respond = do
   res <- case rawPathInfo request of
-    "/"         -> return $ helloRoute request -- todo, serve elm code
+    "/"         -> return $ rootRoute request
     "/api/users/cjwebb" -> userLogsRoute conn "cjwebb"
     "/api/users/cjwebb/logs/weight" -> logDataRoute conn "cjwebb" "weight"
     _           -> return $ notFoundRoute
