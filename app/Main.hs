@@ -16,7 +16,7 @@ import Database
 main :: IO ()
 main = do
   let port = 3000
-  let middleware = staticPolicy (only [("static/index.html", "./static/index.html")])
+  let middleware = staticPolicy (only [("static/main.js", "./elm/main.js")])
   putStrLn $ "Listening on port " ++ show port
   conn <- open "db.sqlite"
   run port $ middleware $ (app conn)
